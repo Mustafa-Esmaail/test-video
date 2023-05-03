@@ -1,7 +1,177 @@
+import {
+    HandLandmarker,
+    FilesetResolver,
+  } from "https://cdn.skypack.dev/@mediapipe/tasks-vision@0.1.0-alpha-11";
+  const classesNames = [
+    "ع",
+    "ال",
+    "ا",
+    "ب",
+    "د",
+    "ظ",
+    "ض",
+    "ف",
+    "ق",
+    "غ",
+    "ه",
+    "ح",
+    "ج",
+    "ك",
+    "خ",
+    "لا",
+    "ل",
+    "م",
+    "nothing",
+    "ن",
+    "ر",
+    "ص",
+    "س",
+    "ش",
+    "ت",
+    "ط",
+    "ث",
+    "ذ",
+    "ة",
+    "و",
+    "ي",
+    "ئ",
+    "ز",
+  ];
+  let videos=[];
+  let videosParent=[];
+  let enableprediction=false;
+  let handLandmarker;
+  let handModel;
+  const createHandLandmarker = async () => {
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.1.0-alpha-11/wasm"
+    );
+    handLandmarker = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: `https://storage.googleapis.com/mediapipe-assets/hand_landmarker.task`,
+      },
+      runningMode: 'VIDEO',
+      numHands: 2,  
+    });
+    handModel = await tf.loadLayersModel(
+      "https://raw.githubusercontent.com/Mustafa-Esmaail/arabic-sign-language/sign-lang-model-v1/model.json"
+    );
+   
+  
+   
+  };
+  createHandLandmarker();
+
+const calc_landmark_list=(landmarks,videoHeight,videoWidth)=>{
+    let landmark_point = [];
+
+    landmarks.map((landmark) => {
+
+      const landmark_x = Math.min(
+        Number(landmark.x * videoWidth),
+        videoWidth - 1
+      );
+      const landmark_y = Math.min(
+        Number(landmark.y * videoHeight),
+        videoHeight - 1
+      );
+      landmark_point.push([landmark_x, landmark_y]);
+    });
+    return landmark_point;
+
+}  
+const process_landmark_ponts=(landmark_points)=>{
+    var base_x = 0;
+    var base_y = 0;
+    let marks = [];
+
+    landmark_points.map((point, index) => {
+      if (index === 0) {
+        base_x = landmark_points[index][0];
+
+        base_y = landmark_points[index][1];
+      }
+      landmark_points[index][0] = landmark_points[index][0] - base_x;
+      landmark_points[index][1] = landmark_points[index][1] - base_y;
+      marks.push(landmark_points[index][0]);
+      marks.push(landmark_points[index][1]);
+    });
+
+    let max_value = Math.max.apply(null, marks.map(Math.abs));
+
+    marks.map((point, idx) => {
+      marks[idx] = marks[idx] / max_value;
+    });
+    let tfMark = tf.tensor(marks).reshape([1, 42]);
+
+
+    return tfMark;
+
+}
+const predict =async ()=>{
+    // enableprediction=true
+    console.log(videos)
+    for(let i =0;i< videos.length;i++){
+        const videoWidth =videos[i].videoWidth;
+        const videoHeight =videos[i].videoHeight;
+        console.log(videoWidth);
+        console.log(videos[i])
+        let startTimeMs = performance.now();
+        const results = handLandmarker.detectForVideo(videos[i], startTimeMs);
+        console.log(results)
+        const canvas=  videosParent[i].childNodes[1];
+        const h4result=  videosParent[i].childNodes[2];
+        let letter=''
+        console.log(canvas)
+        results.landmarks.map((landmarks) => {
+          let landmark_list= calc_landmark_list(landmarks,videoHeight,videoWidth);
+          console.log(landmark_list);
+          let tfLand= process_landmark_ponts(landmark_list);
+          console.log(tfLand)
+          const prediction = handModel.predict(tfLand);
+          const handResult = prediction.dataSync();
+          const arr = Array.from(handResult);
+          const maxPredict = Math.max.apply(null, arr);
+          const idx = arr.indexOf(maxPredict);
+          console.log(classesNames[idx]);
+          h4result.innerHTML=classesNames[idx]
+          
+ 
+
+        });
+        const cxt = canvas.getContext("2d");
+        cxt.save();
+        cxt.clearRect(0, 0, canvas.width, canvas.height);
+        for (const landmarks of results.landmarks) {
+            drawConnectors(cxt, landmarks, HAND_CONNECTIONS, {
+            color: "#00FF00",
+            lineWidth: 5,
+            });
+            drawLandmarks(cxt, landmarks, { color: "#FF0000", lineWidth: 1 });
+        }
+        cxt.restore();
+
+    }
+   
+
+
+    setTimeout(() => {
+        if(enableprediction==true){
+            window.requestAnimationFrame(predict);
+        }
+      }, 1000);
+    // let startTimeMs = performance.now();
+    // const results = handLandmarker.detectForVideo(video, startTimeMs);
+    // console.log(results)
+
+}
+
+
+
 const APP_ID = "7431e3d68f8840a5a64e518def368477"
 const TOKEN = "007eJxTYMhJ32itVatz8qjMxSxxqw1ve0W10xveKBQfLzL+3Cibel2BwdzE2DDVOMXMIs3CwsQg0TTRzCTV1NAiJTXN2MzCxNx8UltQSkMgI8OqehsWRgYIBPHZGXJLi0sS0xIZGABDzB8y"
 const CHANNEL = "mustafa"
-
+let userID='';
 const client = AgoraRTC.createClient({mode:'rtc', codec:'vp8'})
 
 let localTracks = []
@@ -14,6 +184,7 @@ let joinAndDisplayLocalStream = async () => {
     client.on('user-left', handleUserLeft)
     
     let UID = await client.join(APP_ID, CHANNEL, TOKEN, null)
+    userID=UID
 
     localTracks = await AgoraRTC.createMicrophoneAndCameraTracks() 
 
@@ -31,9 +202,33 @@ let joinStream = async () => {
     await joinAndDisplayLocalStream()
     document.getElementById('join-btn').style.display = 'none'
     document.getElementById('stream-controls').style.display = 'flex'
+    videos=document.getElementsByClassName('agora_video_player')
+    videosParent=document.getElementsByClassName('video-parent')
+     for(let i =0;i<=videosParent.length;i++){
+        const canvas = document.createElement("canvas");
+        const h4 = document.createElement("h4");
+        h4.setAttribute("class", "cam-result");
+        canvas.setAttribute("class", "canvas");
+        canvas.setAttribute("width", videosParent[i].getBoundingClientRect().width + "px");
+        canvas.setAttribute("height", videosParent[i].getBoundingClientRect().height + "px");
+        canvas.style =
+            "left: 0px;" +
+            "top: 0px;" +
+            "width: " +
+            videosParent[i].getBoundingClientRect().width +
+            "px;" +
+            "height: " +
+            videosParent[i].getBoundingClientRect().height +
+            "px;";
+            videosParent[i].appendChild(canvas);
+            videosParent[i].appendChild(h4);
+            // console.log(videosParent[i].getBoundingClientRect().height)
+     }
+    // console.log(video)
 }
 
 let handleUserJoined = async (user, mediaType) => {
+
     remoteUsers[user.uid] = user 
     await client.subscribe(user, mediaType)
 
@@ -54,6 +249,46 @@ let handleUserJoined = async (user, mediaType) => {
     if (mediaType === 'audio'){
         user.audioTrack.play()
     }
+    
+    let videosParentlast=document.querySelectorAll(".video-parent")
+    for(let i =0;i<=videosParentlast.length;i++){
+    
+        if (videosParentlast[i].childNodes.length > 1) { // Or just `if (element.childNodes.length)`
+            // It has at least one
+            console.log(videosParentlast[i].childNodes[1])
+            videosParentlast[i].childNodes[1].style="width: " +
+            videosParent[i].getBoundingClientRect().width +
+            "px;" +
+            "height: " +
+            videosParent[i].getBoundingClientRect().height +
+            "px;";
+            videosParentlast[i].childNodes[1].setAttribute("width", videosParent[i].getBoundingClientRect().width + "px");
+            videosParentlast[i].childNodes[1].setAttribute("height", videosParent[i].getBoundingClientRect().height + "px");
+        }
+        else{
+            const canvas = document.createElement("canvas");
+            const h4 = document.createElement("h4");
+            h4.setAttribute("class", "cam-result");
+            canvas.setAttribute("class", "canvas");
+            canvas.setAttribute("width", videosParent[i].getBoundingClientRect().width + "px");
+            canvas.setAttribute("height", videosParent[i].getBoundingClientRect().height + "px");
+            canvas.style =
+                "left: 0px;" +
+                "top: 0px;" +
+                "width: " +
+                videosParent[i].getBoundingClientRect().width +
+                "px;" +
+                "height: " +
+                videosParent[i].getBoundingClientRect().height +
+                "px;";
+                videosParent[i].appendChild(canvas);
+                videosParent[i].appendChild(h4);
+
+                        // console.log(videosParent[i].getBoundingClientRect().height)
+        }
+       
+     }
+
 }
 
 let handleUserLeft = async (user) => {
@@ -86,6 +321,7 @@ let toggleMic = async (e) => {
 }
 
 let toggleCamera = async (e) => {
+    console.log(userID)
     if(localTracks[1].muted){
         await localTracks[1].setMuted(false)
         e.target.innerText = 'Camera on'
@@ -96,8 +332,26 @@ let toggleCamera = async (e) => {
         e.target.style.backgroundColor = '#EE4B2B'
     }
 }
+let togglePredict= async (e) => {
+    
+    if(enableprediction==true){
+        enableprediction=false;
+        e.target.innerText = 'Start Detection'
+
+    }else{
+        enableprediction=true
+        predict()
+        e.target.innerText = 'Stop Detection'
+        // // e.target.style.backgroundColor = '#EE4B2B'
+    }
+    console.log(enableprediction)
+}
 
 document.getElementById('join-btn').addEventListener('click', joinStream)
 document.getElementById('leave-btn').addEventListener('click', leaveAndRemoveLocalStream)
 document.getElementById('mic-btn').addEventListener('click', toggleMic)
 document.getElementById('camera-btn').addEventListener('click', toggleCamera)
+// document.getElementById('detect-start').addEventListener('click', predict)
+document.getElementById('detect-stop').addEventListener('click', togglePredict)
+
+  

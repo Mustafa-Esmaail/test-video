@@ -55,3 +55,13 @@ button{
         width: 95%;
     }
 }
+.canvas {
+    z-index: 999;
+    position: absolute;
+}
+.cam-result{
+    margin: 20 ;
+    padding: 10px;
+    font-size: 2em;
+    color: #fff;
+}
