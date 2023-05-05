@@ -64,4 +64,6 @@ button{
     padding: 10px;
     font-size: 2em;
     color: #fff;
+    position: absolute;
+    text-align: center;
 }
