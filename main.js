@@ -38,6 +38,9 @@ import {
     "ز",
   ];
   let videos=[];
+  let Camletter = [];
+  let word = "";
+  let counter = 0;
   let videosParent=[];
   let enableprediction=false;
   let handLandmarker;
@@ -110,8 +113,9 @@ const process_landmark_ponts=(landmark_points)=>{
 }
 const predict =async ()=>{
     // enableprediction=true
-    console.log(videos)
+    // console.log(videos)
     for(let i =0;i< videos.length;i++){
+
         const videoWidth =videos[i].videoWidth;
         const videoHeight =videos[i].videoHeight;
         console.log(videoWidth);
@@ -121,25 +125,43 @@ const predict =async ()=>{
         console.log(results)
         const canvas=  videosParent[i].childNodes[1];
         const h4result=  videosParent[i].childNodes[2];
-        let letter=''
-        console.log(canvas)
-        results.landmarks.map((landmarks) => {
-          let landmark_list= calc_landmark_list(landmarks,videoHeight,videoWidth);
-          console.log(landmark_list);
-          let tfLand= process_landmark_ponts(landmark_list);
-          console.log(tfLand)
-          const prediction = handModel.predict(tfLand);
-          const handResult = prediction.dataSync();
-          const arr = Array.from(handResult);
-          const maxPredict = Math.max.apply(null, arr);
-          const idx = arr.indexOf(maxPredict);
-          console.log(classesNames[idx]);
-          h4result.innerHTML=classesNames[idx]
-          
- 
-
-        });
         const cxt = canvas.getContext("2d");
+        
+        let letter=''
+        console.log(results.landmarks)
+        if(results.landmarks.length >0){
+          counter=0;
+          results.landmarks.map((landmarks) => {
+            let landmark_list= calc_landmark_list(landmarks,videoHeight,videoWidth);
+            console.log(landmark_list);
+            let tfLand= process_landmark_ponts(landmark_list);
+            console.log(tfLand)
+            const prediction = handModel.predict(tfLand);
+            const handResult = prediction.dataSync();
+            const arr = Array.from(handResult);
+            const maxPredict = Math.max.apply(null, arr);
+            const idx = arr.indexOf(maxPredict);
+            console.log(classesNames[idx]);
+            Camletter.push(classesNames[idx]);
+            word = Camletter.join("");
+            h4result.innerHTML=word
+            // Camletter.push(classesNames[idx]);
+            
+   
+  
+          });
+          
+         
+
+          
+        }
+        else{
+          counter++;
+          if(counter ===3 ){
+            Camletter.push(' ')
+            counter=0;
+          }
+        }
         cxt.save();
         cxt.clearRect(0, 0, canvas.width, canvas.height);
         for (const landmarks of results.landmarks) {
@@ -149,7 +171,10 @@ const predict =async ()=>{
             });
             drawLandmarks(cxt, landmarks, { color: "#FF0000", lineWidth: 1 });
         }
+      cxt.restore();
         cxt.restore();
+
+       
 
     }
    
@@ -157,9 +182,10 @@ const predict =async ()=>{
 
     setTimeout(() => {
         if(enableprediction==true){
-            window.requestAnimationFrame(predict);
+            predict();
+            console.log(counter)
         }
-      }, 1000);
+      }, 700);
     // let startTimeMs = performance.now();
     // const results = handLandmarker.detectForVideo(video, startTimeMs);
     // console.log(results)
