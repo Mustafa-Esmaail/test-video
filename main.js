@@ -361,6 +361,7 @@ let toggleCamera = async (e) => {
 let togglePredict= async (e) => {
     
     if(enableprediction==true){
+        word=""
         enableprediction=false;
         e.target.innerText = 'Start Detection'
 
