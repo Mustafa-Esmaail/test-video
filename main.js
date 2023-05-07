@@ -169,7 +169,7 @@ const predict =async ()=>{
 
 
 const APP_ID = "7431e3d68f8840a5a64e518def368477"
-const TOKEN = "007eJxTYJATsr7Bbmz+XLfEjO1+eOGMz/8z5xo3CPXpPVx1WGx69S4FBnMTY8NU4xQzizQLCxODRNNEM5NUU0OLlNQ0YzMLE3NzN9bQlIZARoYJGlrMjAwQCOKzM+SWFpckpiUyMAAA4ywdcw=="
+const TOKEN = "007eJxTYPhm2/OjRdvKbvXSnTOl1xl7B3d9b+j4+/Ne+HRlQWnLz1wKDOYmxoapxilmFmkWFiYGiaaJZiappoYWKalpxmYWJubm296EpzQEMjL8venIzMjAyMACxCA+E5hkBpMsYJKdIbe0uCQxLZGBAQA3cCQN"
 const CHANNEL = "mustafa"
 let userID='';
 const client = AgoraRTC.createClient({mode:'rtc', codec:'vp8'})
