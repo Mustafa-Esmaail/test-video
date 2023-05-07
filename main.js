@@ -361,6 +361,10 @@ let toggleCamera = async (e) => {
 let togglePredict= async (e) => {
     
     if(enableprediction==true){
+        let h4Results=document.getElementsByClassName('cam-result')
+        for(let i=0;i < h4Results.length ; i++){
+        h4Results=document.getElementsByClassName('cam-result')[i].innerHTML=""
+        }
         word=""
         enableprediction=false;
         e.target.innerText = 'Start Detection'
