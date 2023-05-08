@@ -38,9 +38,10 @@ const classesNames = [
   "ز",
 ];
 let videos=[];
+// let word=""
 let Camletter = [];
-let word = "";
 let counter = 0;
+
 let videosParent=[];
 let enableprediction=false;
 let handLandmarker;
@@ -126,11 +127,11 @@ const predict =async ()=>{
       const canvas=  videosParent[i].childNodes[1];
       const h4result=  videosParent[i].childNodes[2];
       const cxt = canvas.getContext("2d");
-      
+      let word ="";
       let letter=''
       console.log(results.landmarks)
       if(results.landmarks.length >0){
-        counter=0;
+      counter = 0;
         results.landmarks.map((landmarks) => {
           let landmark_list= calc_landmark_list(landmarks,videoHeight,videoWidth);
           console.log(landmark_list);
@@ -142,23 +143,22 @@ const predict =async ()=>{
           const maxPredict = Math.max.apply(null, arr);
           const idx = arr.indexOf(maxPredict);
           console.log(classesNames[idx]);
-          Camletter.push(classesNames[idx]);
-          word = Camletter.join("");
+          word= word.concat(classesNames[idx])
+          console.log(word)
+          Camletter[i].push(classesNames[idx]);
+          word = Camletter[i].join("");
           h4result.innerHTML=word
           // Camletter.push(classesNames[idx]);
           
  
 
         });
-        
-       
-
-        
+ 
       }
       else{
         counter++;
         if(counter ===3 ){
-          Camletter.push(' ')
+          Camletter[i].push(' ')
           counter=0;
         }
       }
@@ -184,6 +184,7 @@ const predict =async ()=>{
       if(enableprediction==true){
           predict();
           console.log(counter)
+
       }
     }, 700);
   // let startTimeMs = performance.now();
@@ -275,7 +276,8 @@ let handleUserJoined = async (user, mediaType) => {
   if (mediaType === 'audio'){
       user.audioTrack.play()
   }
-  
+  Camletter.push([])
+  console.log(Camletter)
   let videosParentlast=document.querySelectorAll(".video-parent")
   for(let i =0;i<=videosParentlast.length;i++){
   
@@ -386,4 +388,3 @@ document.getElementById('mic-btn').addEventListener('click', toggleMic)
 document.getElementById('camera-btn').addEventListener('click', toggleCamera)
 // document.getElementById('detect-start').addEventListener('click', predict)
 document.getElementById('detect-stop').addEventListener('click', togglePredict)
-
