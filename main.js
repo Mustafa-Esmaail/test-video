@@ -48,7 +48,7 @@ let handLandmarker;
 let handModel;
 const createHandLandmarker = async () => {
   const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.1.0-alpha-11/wasm"
+    "https://fastly.jsdelivr.net/npm/@mediapipe/tasks-vision@0.1.0-alpha-11/wasm"
   );
   handLandmarker = await HandLandmarker.createFromOptions(vision, {
     baseOptions: {
